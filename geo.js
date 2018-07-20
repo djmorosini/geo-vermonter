@@ -6,8 +6,11 @@ let mapCenter;
 let infoState = { guessNumber: 0, score: 20, zoomLevel: 18 }
 
 function updateInfoState(statesToChange) {
-    if (statesToChange.includes("Guess number")) {
+    if (statesToChange.includes("Wrong guess")) {
         infoState.guessNumber++
+        wrongGuessAlert = document.getElementById("alert")
+        wrongGuessAlert.style = "display: inline-block; position: absolute; top: 400px; left: 250px; width: 350px;"
+        wrongGuessAlert.innerHTML = "Guess " + infoState.guessNumber + ": Wrong guess, guess again! <br><button onclick='closeAlert()' id='guessAgain'>Close</button>"
     }
     if (statesToChange.includes("Score")) {
         infoState.score--
@@ -18,6 +21,10 @@ function updateInfoState(statesToChange) {
         infoState.zoomNumber = 0;
         infoState.score = 20;
         infoState.zoomLevel = 18;
+
+        document.getElementById("latitude").textContent = "Latitude: ?"
+        document.getElementById("longitude").textContent = "Longitude: ?"
+        document.getElementById("countySpan").textContent = "County: ?"
     }
     if (statesToChange.includes("Zoom level")) {
         infoState.zoomLevel--
@@ -72,20 +79,18 @@ function initialize() {
     map.scrollWheelZoom.disable();
     map.boxZoom.disable();
     map.keyboard.disable();
-    L.geoJSON(county_data, { color: 'forestgreen', fillColor: 'white' }).addTo(map)
+    L.geoJSON(county_data, { color: 'black', fillColor: 'white', weight: 1 }).addTo(map)
     L.geoJSON(border_data, { color: 'forestgreen', weight: 4 }).addTo(map)
 }
 function startGame() {
     closeDropdown()
+    randomCoords();
     updateInfoState("Reset")
     changeGameState("Start")
-    randomCoords();
     createMap(mapCenter.latitude, mapCenter.longitude, infoState.zoomLevel, theSpot.latitude, theSpot.longitude)
-    document.getElementById("latitude").textContent = "Latitude: ?"
-    document.getElementById("longitude").textContent = "Longitude: ?"
-    document.getElementById("countySpan").textContent = "County: ?"
     updateScore()
     closeAlert()
+    theSpot.fetchCounty()
 }
 function randomCoords() {
     theSpot = createRandomPoint();
@@ -95,7 +100,6 @@ function randomCoords() {
     if (!results.length) {
         randomCoords();
     }
-    theSpot.fetchCounty()
 }
 function updateScore() {
     if (infoState.score === 0) {
@@ -152,10 +156,7 @@ function checkName() {
     }
 }
 function wrongGuess() {
-    updateInfoState("Guess number")
-    wrongGuessAlert = document.getElementById("alert")
-    wrongGuessAlert.style = "display: inline-block; position: absolute; top: 400px; left: 250px; width: 350px;"
-    wrongGuessAlert.innerHTML = "Guess " + infoState.guessNumber + ": Wrong guess, guess again! <br><button onclick='closeAlert()' id='guessAgain'>Close</button>"
+    updateInfoState("Wrong guess")
     updateInfoState("Score")
 }
 
@@ -218,8 +219,8 @@ function createMap(lat, long, zoomL, originalLat, originalLong) {
             maxZoom: 18,
             minZoom: 1,
         }).addTo(map);
-    L.geoJSON(county_data, { color: 'black', fillOpacity: '.01' }).addTo(map)
-    L.geoJSON(border_data, { color: 'forestgreen', weight: 5 }).addTo(map)
+    L.geoJSON(county_data, { color: 'black', fillOpacity: '.01', weight: 2 }).addTo(map)
+    // L.geoJSON(border_data, { color: 'forestgreen', weight: 5 }).addTo(map)
     map.dragging.disable();
     map.touchZoom.disable();
     map.doubleClickZoom.disable();
@@ -244,7 +245,7 @@ function saveScore() {
 
         leaderboard.push(scoreObject)
 
-        let sortedLeaderboard = leaderboard.sort(function (a, b) {
+        let sortedLeaderboard = leaderboard.sort((a, b) => {
             return Number(b.score) - Number(a.score);
         });
 
@@ -269,8 +270,7 @@ function showLeaderboard() {
         let leaderboard = JSON.parse(localStorage.getItem('highscores'))
 
         countyDropdown.style = "border: 2px solid black; z-index:3; display: block; position:absolute; top: 10px; left:250px; background-color:white; width:300px;"
-        countyDropdown.innerHTML
-            = "<h2>High Scores</h2><div id='highscoreTable'><table><thead><tr><th>Name</th><th>Score</th></tr></thead><tbody></tbody></table></div>"
+        countyDropdown.innerHTML = "<h2>High Scores</h2><div id='highscoreTable'><table><thead><tr><th>Name</th><th>Score</th></tr></thead><tbody></tbody></table></div>"
         for (let game of leaderboard) {
             let tableBody = document.querySelector("#countyDropdown tbody")
             tableBody.innerHTML
