@@ -31,7 +31,7 @@ class PointInVermont {
                     }
 
                 } else {
-                    console.log("Not a Vermont county")
+                    console.log("Fetch county failed!")
                 }
             });
     }

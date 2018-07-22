@@ -144,6 +144,14 @@ function correctGuess() {
     closeDropdown()
     rightGuessAlert = document.getElementById("alert")
     rightGuessAlert.style = "display: inline-block; position: absolute; top: 100px; left: 250px; width: 350px;"
+    rightGuessAlert.addEventListener('keypress', function (e) {
+        // var key = e.which || e.keyCode;
+        // if (key === 13) {
+            console.log("HI! you pressed " + e.key)
+        if (e.key === 'Enter') {
+            checkName();
+        }
+    });
     rightGuessAlert.innerHTML = "Correct! You win! <br> You scored " + infoState.score + " points!<br><label for='highscores'>Enter your initials, must be 3 characters:</label><input style='text-transform: uppercase; letter-spacing:4px;' id='initials' type='text' placeholder='---' /><br><button onclick='checkName()' id='guessAgain'>Submit</button>"
 
     changeGameState("Not playing game")
