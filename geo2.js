@@ -3,33 +3,32 @@ const countiesInVermont = ["Addison County", "Bennington County", "Caledonia Cou
 let theSpot;
 let mapCenter;
 
-let infoState = { guessNumber: 0, score: 20, zoomLevel: 18 }
+class InfoState {
+    constructor(onScoreChange) {
+        this.guessNumber = 0
+        this.score = 20
+        this.zoomLevel = 18
 
-function updateInfoState(statesToChange) {
-    if (statesToChange.includes("Wrong guess")) {
-        infoState.guessNumber++
-        wrongGuessAlert = document.getElementById("alert")
-        wrongGuessAlert.style = "display: inline-block; position: absolute; top: 400px; left: 250px; width: 350px;"
-        wrongGuessAlert.innerHTML = "Guess " + infoState.guessNumber + ": Wrong guess, guess again! <br><button onclick='closeAlert()' id='guessAgain'>Close</button>"
+        this.onScoreChange = onScoreChange
     }
-    if (statesToChange.includes("Score")) {
-        infoState.score--
-        updateScore();
+    changeGuessNumber() {
+        this.guessNumber++
     }
-    if (statesToChange.includes("Reset")) {
-        infoState.guessNumber = 0;
-        infoState.zoomNumber = 0;
-        infoState.score = 20;
-        infoState.zoomLevel = 18;
-
-        document.getElementById("latitude").textContent = "Latitude: ?"
-        document.getElementById("longitude").textContent = "Longitude: ?"
-        document.getElementById("countySpan").textContent = "County: ?"
+    changeScore() {
+        this.score--
+        this.onScoreChange(score)
     }
-    if (statesToChange.includes("Zoom level")) {
-        infoState.zoomLevel--
+    changeZoomLevel() {
+        this.zoomLevel--
+    }
+    reset() {
+        this.guessNumber = 0;
+        this.score = 20;
+        this.zoomLevel = 18;
     }
 }
+
+let infoState = new InfoState(updateScore)
 
 function changeGameState(newGameState) {
     if (newGameState === "Not playing game") {
@@ -54,6 +53,7 @@ function changeGameState(newGameState) {
 }
 
 function initialize() {
+
     if (localStorage.getItem('highscores')) {
         highscoreDiv = document.getElementById("highscore")
         let leaderboard = JSON.parse(localStorage.getItem('highscores'))
@@ -83,12 +83,15 @@ function initialize() {
     L.geoJSON(border_data, { color: 'forestgreen', weight: 4 }).addTo(map)
 }
 function startGame() {
+    document.getElementById("latitude").textContent = "Latitude: ?"
+    document.getElementById("longitude").textContent = "Longitude: ?"
+    document.getElementById("countySpan").textContent = "County: ?"
     closeDropdown()
     randomCoords();
-    updateInfoState("Reset")
+    infoState.reset()
+    updateScore()
     changeGameState("Start")
     createMap(mapCenter.latitude, mapCenter.longitude, infoState.zoomLevel, theSpot.latitude, theSpot.longitude)
-    updateScore()
     closeAlert()
     theSpot.fetchCounty()
 }
@@ -112,6 +115,7 @@ function updateScore() {
     }
     document.getElementById("score").textContent = "Score: " + infoState.score;
 }
+
 function closeAlert() {
     alert = document.getElementById("alert")
     alert.style = "display: none;"
@@ -145,7 +149,6 @@ function correctGuess() {
     rightGuessAlert = document.getElementById("alert")
     rightGuessAlert.style = "display: inline-block; position: absolute; top: 100px; left: 250px; width: 350px;"
     rightGuessAlert.addEventListener('keypress', function (e) {
-            console.log("HI! you pressed " + e.key)
         if (e.key === 'Enter') {
             checkName();
         }
@@ -162,12 +165,14 @@ function checkName() {
     }
 }
 function wrongGuess() {
-    updateInfoState("Wrong guess")
-    updateInfoState("Score")
+    infoState.changeGuessNumber()
+    wrongGuessAlert = document.getElementById("alert")
+    wrongGuessAlert.style = "display: inline-block; position: absolute; top: 400px; left: 250px; width: 350px;"
+    wrongGuessAlert.innerHTML = "Guess " + infoState.guessNumber + ": Wrong guess, guess again! <br><button onclick='closeAlert()' id='guessAgain'>Close</button>"
+    infoState.changeScore()
 }
 
 function guessCounty(countyGuessed) {
-    updateScore()
     if (theSpot.county === countyGuessed) {
         correctGuess()
     } else {
@@ -186,29 +191,30 @@ function closeDropdown() {
     countyDropdown.style = "display:none;"
 }
 function zoomOut() {
-    updateInfoState(["Zoom level", "Score"])
+    infoState.changeZoomLevel()
+    infoState.changeScore()
     if (infoState.zoomLevel === 15) {
         document.getElementById("zoomOut").disabled = true;
     }
     createMap(mapCenter.latitude, mapCenter.longitude, infoState.zoomLevel, theSpot.latitude, theSpot.longitude)
 }
 function north() {
-    updateInfoState("Score")
+    infoState.changeScore()
     mapCenter.latitude = mapCenter.latitude + .005;
     createMap(mapCenter.latitude, mapCenter.longitude, infoState.zoomLevel, theSpot.latitude, theSpot.longitude)
 }
 function south() {
-    updateInfoState("Score")
+    infoState.changeScore()
     mapCenter.latitude = mapCenter.latitude - .005;
     createMap(mapCenter.latitude, mapCenter.longitude, infoState.zoomLevel, theSpot.latitude, theSpot.longitude)
 }
 function east() {
-    updateInfoState("Score")
+    infoState.changeScore()
     mapCenter.longitude = mapCenter.longitude + .007;
     createMap(mapCenter.latitude, mapCenter.longitude, infoState.zoomLevel, theSpot.latitude, theSpot.longitude)
 }
 function west() {
-    updateInfoState("Score")
+    infoState.changeScore()
     mapCenter.longitude = mapCenter.longitude - .007;
     createMap(mapCenter.latitude, mapCenter.longitude, infoState.zoomLevel, theSpot.latitude, theSpot.longitude)
 }
@@ -234,6 +240,9 @@ function createMap(lat, long, zoomL, originalLat, originalLong) {
     map.boxZoom.disable();
     map.keyboard.disable();
     markerID = L.marker([originalLat, originalLong]).addTo(map);
+}
+function newMapMarker(lat, long) {
+    newMarker = L.marker([lat, long]).addTo(map);
 }
 function saveScore() {
     let userName = (document.getElementById('initials').value).toUpperCase()
